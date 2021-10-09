@@ -55,8 +55,6 @@ class Tree23 extends Util {
 	/////////////////////////////////////////
 		Tree23() {// Note: ht=0 iff n=0 (where n is number of items)
 			ht = 0; } //  ht=1 implies n=1,2 or 3 
-
-	
 	// METHODS:=========================================
 	/////////////////////////////////////////
 	InternalNode find (String x){
@@ -117,30 +115,32 @@ class Tree23 extends Util {
 
 
 	boolean insert (Item it){
-		System.out.println("Just at insert ");
+		System.out.println("Just at intsert ");
 		// insert(it) returns true iff insertion is successful.
-		InternalNode u = find(it.key);
-		System.out.println(u.degree());
 		if (search(it.key) != null) return false;
+		InternalNode u = find(it.key);
 		//System.out.println("Just after find ");
 		//the node only has 2 children and only needs to add the new node 
+
 		if(u.degree() == 0){ //insert child for root 
 			System.out.println("insert children for root");
 			u.child[0] = new LeafNode(it);
-			ht++;
-			System.out.println(u.degree());
 			return true;
-		}else if(u.degree() == 1){  //second insert
+		}
+
+		else if(u.degree() == 1){  //second insert
 			//child0 become child1
-			System.out.println("insert 2nd");
 			if(((LeafNode)u.child[0]).item().key.compareTo(it.key) > 0){
 				u.child[1] = u.child[0];
 				u.child[0] = new LeafNode(it);
-			}else{
+			}
+			else{
 				u.child[1] = new LeafNode(it);
 			}
 			return true;
-		}else if (u.degree()==2){
+		}
+
+		else if (u.degree()==2){
 			//insert as child2
 			if(((LeafNode)u.child[1]).item().key.compareTo(it.key) > 0){
 				u.child[2] = new LeafNode(it);
@@ -158,19 +158,13 @@ class Tree23 extends Util {
 			return true;
 
 		//the node already has 3 children so now we have to split 
-		}else {
+		} else {
 			//insert new node to the furthest right (child3)
 			if (((LeafNode)u.child[2]).item().key.compareTo(it.key) > 0){
 				u.child[3] = new LeafNode(it);
 				//split 
 				u.newParent(u.child[2], u.child[3], u);
 				u.newParent(u.child[0], u.child[1], u);
-				
-				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
-				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
-				if(p1.parent.degree()==3 || p2.parent.degree()==3){
-					ht++; //if the parent of the parent has degree 3, then split will increae height
-				}
 			//insert new node at the "third" child
 			//move child2 to child3
 			}else if(((LeafNode)u.child[1]).item().key.compareTo(it.key) > 0){
@@ -179,12 +173,6 @@ class Tree23 extends Util {
 				//split
 				u.newParent(u.child[2], u.child[3], u);
 				u.newParent(u.child[0], u.child[1], u);
-				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
-				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
-				if(p1.parent.degree()==3 || p2.parent.degree()==3){
-					ht++; //if the parent of the parent has degree 3, then split will increae height
-				}
-				
 			//insert new node at "second child"
 			//move child2 and child3
 			}else if(((LeafNode)u.child[0]).item().key.compareTo(it.key) > 0){
@@ -194,12 +182,6 @@ class Tree23 extends Util {
 				//split
 				u.newParent(u.child[2], u.child[3], u);
 				u.newParent(u.child[0], u.child[1], u);
-				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
-				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
-				if(p1.parent.degree()==3 || p2.parent.degree()==3){
-					ht++; //if the parent of the parent has degree 3, then split will increae height
-				}
-				
 			}else{
 				//move child0 to child1, child1 to child2, child2 to child3
 				u.child[1] = u.child[0];
@@ -211,13 +193,7 @@ class Tree23 extends Util {
 				//make new parent for child0 and child1
 				u.newParent(u.child[0], u.child[1], u);
 				u.newParent(u.child[2], u.child[3], u);
-				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
-				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
-				if(p1.parent.degree()==3 || p2.parent.degree()==3){
-					ht++; //if the parent of the parent has degree 3, then split will increae height
-				}
 			}
-
 			return true;
 		}
 		//return false; //insertion failed
@@ -779,7 +755,6 @@ class InternalNode extends Node {
 
 
 	void dump (){// print this node
-
 		}//dump
 	void search(){
 
