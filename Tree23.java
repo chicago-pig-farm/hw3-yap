@@ -55,6 +55,8 @@ class Tree23 extends Util {
 	/////////////////////////////////////////
 		Tree23() {// Note: ht=0 iff n=0 (where n is number of items)
 			ht = 0; } //  ht=1 implies n=1,2 or 3 
+
+	
 	// METHODS:=========================================
 	/////////////////////////////////////////
 	InternalNode find (String x){
@@ -62,28 +64,25 @@ class Tree23 extends Util {
 		//		or where x would be inserted.  Thus u is a pseudo-leaf.
 		//		The node u is NEVER null.
 		// 	This is the common helper for search/insert/delete!!
-
 		if(ht == 0) return root;
 		return findHelper(root,x);
 		}//find
-
-
 		InternalNode findHelper (InternalNode parent, String key){
 			//base case : leaves with keys 
 			//if child node is internal node keep going 
 			//if child node is leafnode recurse and check the key 
-			if(parent.child[0] instanceof LeafNode){
+			if(parent.child[0] instanceof LeafNode){ //key found in left child
 				String tempKey = ((LeafNode)parent.child[0]).item().key;
 				if ( tempKey.equals(key)){
 					return parent;
 				}
-			} else if(parent.child[1] instanceof LeafNode){
+			} else if(parent.child[1] instanceof LeafNode){ //key found in middle child
 				String tempKey = ((LeafNode)parent.child[1]).item().key;
 				if ( tempKey.equals(key)){
 					return parent;
 				}
 			}
-			else if(parent.degree() > 2 && parent.child[2] instanceof LeafNode){
+			else if(parent.degree() > 2 && parent.child[2] instanceof LeafNode){ //key found in right child
 				String tempKey = ((LeafNode)parent.child[2]).item().key;
 				if ( tempKey.equals(key)){
 					return parent;
@@ -92,7 +91,7 @@ class Tree23 extends Util {
 				for (int i=0; i< parent.degree(); i++){
 					InternalNode tempChild = (InternalNode)parent.child[i];
 					if (tempChild.guide.compareTo(key) <= 0)  { // key is equal to or less than guide
-						return findHelper(tempChild, key); 
+						return findHelper(tempChild, key); //recurse 
 					}
 				}
 				InternalNode maxChild = (InternalNode) parent.child[parent.degree() -1];
@@ -102,11 +101,10 @@ class Tree23 extends Util {
 		}//findHelper
 
 	//TODOTODOTODOTODOTODO
-	LeafNode search (String x){
-		
+	LeafNode search (String x){	
 		// Returns a null node if failure;
 		// 		otherwise, return a LeafNode with the key x.
-		InternalNode u = find(x); //check  leaf node 
+		InternalNode u = find(x); 
 		for (int i=0; i<u.degree(); i++){
 				String tempKey = ((LeafNode)u.child[i]).item().key; //look at all the child via for loop 
 				if ( tempKey.equals(x)){
@@ -119,18 +117,35 @@ class Tree23 extends Util {
 
 
 	boolean insert (Item it){
+		System.out.println("Just at insert ");
 		// insert(it) returns true iff insertion is successful.
-		if (search(it.key) == null) return false;
 		InternalNode u = find(it.key);
-		LeafNode child1 = (LeafNode) u.child[1];
-		LeafNode child0 = (LeafNode) u.child[0];
+		System.out.println(u.degree());
+		if (search(it.key) != null) return false;
+		//System.out.println("Just after find ");
 		//the node only has 2 children and only needs to add the new node 
-		if (u.degree()==2){
+		if(u.degree() == 0){ //insert child for root 
+			System.out.println("insert children for root");
+			u.child[0] = new LeafNode(it);
+			ht++;
+			System.out.println(u.degree());
+			return true;
+		}else if(u.degree() == 1){  //second insert
+			//child0 become child1
+			System.out.println("insert 2nd");
+			if(((LeafNode)u.child[0]).item().key.compareTo(it.key) > 0){
+				u.child[1] = u.child[0];
+				u.child[0] = new LeafNode(it);
+			}else{
+				u.child[1] = new LeafNode(it);
+			}
+			return true;
+		}else if (u.degree()==2){
 			//insert as child2
-			if(child1.item().key.compareTo(it.key) > 0){
+			if(((LeafNode)u.child[1]).item().key.compareTo(it.key) > 0){
 				u.child[2] = new LeafNode(it);
 			//insert as child1, and move the "old child1" to child2
-			}else if(child0.item().key.compareTo(it.key) > 0){
+			}else if(((LeafNode)u.child[0]).item().key.compareTo(it.key) > 0){
 				u.child[2] = u.child[1];
 				u.child[1] = new LeafNode(it);
 			//insert as child0
@@ -140,33 +155,51 @@ class Tree23 extends Util {
 				u.child[1] = u.child[0];
 				u.child[0] = new LeafNode(it);
 			}
+			return true;
+
 		//the node already has 3 children so now we have to split 
-		} else {
-			LeafNode child2 = (LeafNode) u.child[2];
-			LeafNode child3 = (LeafNode) u.child[3];
+		}else {
 			//insert new node to the furthest right (child3)
-			if (child2.item().key.compareTo(it.key) > 0){
+			if (((LeafNode)u.child[2]).item().key.compareTo(it.key) > 0){
 				u.child[3] = new LeafNode(it);
 				//split 
-				u.newParent((Node)child2, (Node)child3, (InternalNode)u);
-				u.newParent((Node)child0, (Node)child1, (InternalNode)u);
+				u.newParent(u.child[2], u.child[3], u);
+				u.newParent(u.child[0], u.child[1], u);
+				
+				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
+				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
+				if(p1.parent.degree()==3 || p2.parent.degree()==3){
+					ht++; //if the parent of the parent has degree 3, then split will increae height
+				}
 			//insert new node at the "third" child
 			//move child2 to child3
-			}else if(child1.item().key.compareTo(it.key) > 0){
+			}else if(((LeafNode)u.child[1]).item().key.compareTo(it.key) > 0){
 				u.child[3] = u.child[2];
 				u.child[2] = new LeafNode(it);
 				//split
-				u.newParent((Node)child2, (Node)child3, (InternalNode)u);
-				u.newParent((Node)child0, (Node)child1, (InternalNode)u);
+				u.newParent(u.child[2], u.child[3], u);
+				u.newParent(u.child[0], u.child[1], u);
+				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
+				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
+				if(p1.parent.degree()==3 || p2.parent.degree()==3){
+					ht++; //if the parent of the parent has degree 3, then split will increae height
+				}
+				
 			//insert new node at "second child"
 			//move child2 and child3
-			}else if(child0.item().key.compareTo(it.key) > 0){
+			}else if(((LeafNode)u.child[0]).item().key.compareTo(it.key) > 0){
 				u.child[3] = u.child[2];
 				u.child[2] = u.child[1];
 				u.child[1] = new LeafNode(it);
 				//split
-				u.newParent((Node)child2, (Node)child3, (InternalNode)u);
-				u.newParent((Node)child0, (Node)child1, (InternalNode)u);
+				u.newParent(u.child[2], u.child[3], u);
+				u.newParent(u.child[0], u.child[1], u);
+				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
+				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
+				if(p1.parent.degree()==3 || p2.parent.degree()==3){
+					ht++; //if the parent of the parent has degree 3, then split will increae height
+				}
+				
 			}else{
 				//move child0 to child1, child1 to child2, child2 to child3
 				u.child[1] = u.child[0];
@@ -176,13 +209,20 @@ class Tree23 extends Util {
 				u.child[0] = new LeafNode(it);
 				//split child0 and child1 from child2 and child3
 				//make new parent for child0 and child1
-
-				u.newParent((Node)u.child[0], (Node)u.child[1], (InternalNode)u);
-				u.newParent((Node)u.child[2], (Node)u.child[3], (InternalNode)u);
+				u.newParent(u.child[0], u.child[1], u);
+				u.newParent(u.child[2], u.child[3], u);
+				InternalNode p1 = u.child[0].parent; //same parent for child0 and child1
+				InternalNode p2 = u.child[2].parent; //same parent for child2 and child3
+				if(p1.parent.degree()==3 || p2.parent.degree()==3){
+					ht++; //if the parent of the parent has degree 3, then split will increae height
+				}
 			}
+
+			return true;
 		}
-		return false; //insertion failed
+		//return false; //insertion failed
 		}//insert
+
 	Item delete (String x){
 		// delete(x) returns the deleted item
 		//			returns null if nothing is deleted.
@@ -279,6 +319,7 @@ class Tree23 extends Util {
 			t.showTree();
 		debug("\n=============== THE END");
 		}//unitTest
+
 	void showTree () {
             // print all the keys in 23tree:
             int h = ht;
@@ -286,159 +327,170 @@ class Tree23 extends Util {
             showTree(u, h, "");
             dbug("\n");
         }// showTree
-        void showTree (Node u, int h, String offset) {
-            // internal recursive call for showTree
-            if (h == 0) {
-                debug("()");
-                return;
-            }
-            int d = ((InternalNode) u).degree();
-            String increment = "G=" + String.valueOf(u.guide) + ":(";
-            // Note: "G=" refers to the "guide"
-            dbug(increment);
-            offset = offset + tab(increment.length() - 1, '-') + "|";
-            for (int i = 0; i < d; i++)
-                if (h == 1) {
-                    Node w = ((InternalNode) u).child[i];
-                    LeafNode v = (LeafNode) w;
-                    (v.item()).dump();
-                    if (i == d - 1)
-                        debug(")");
-                } else {
-                    if (i > 0)
-                        dbug(offset);
-                    showTree(((InternalNode) u).child[i], h - 1, offset);
-                }
-            // dbug(")");
-        }// showTree
 
-      /*  String tab (int n, char c){
-            // returns a string of length n filled with c
-            char[] chars = new char[n];
-            java.util.Arrays.fill(chars, c);
-            return String.valueOf(chars);
-        }//tab
-*/
-        Tree23 randomTree (Random rg, int n, int N) {
-            // Insert n times into empty tree, and return the tree.
-            // Use rg as random number generator keys in range [0,N)
-            // Keep the size of tree in Util.COUNT
-            Tree23 t = new Tree23();
-            for (int i = 0; i < n; i++) {
-                int x = rg.nextInt(N);
-                Item it = new Item(x);
-                boolean b = t.insert(it);
-                if (b)  COUNT++;
-            } // for
-            return t;
-        }// randomTree
 
-        int randomDelete (Random rg, Tree23 tt, int N) {
-            // delete a random element in the tree 100 times until it's empty
-            // Use rg as random number generator keys in range [0,N)
-            // return the delete count if tree is empty
-            int count = 0;
-            Item it;
-            while (count < 100 && tt.ht > 0) {
-                it = tt.delete(String.valueOf(rg.nextInt(N)));
-                count++;
-            }
-            return count;
-        }// randomDelete
-        void messUpTree (String key) {
-            InternalNode u = find(key);
-            int deg = u.degree();
-            u.swapNodes(0, deg - 1);
-        }// messUpTree
-        String checkTree () {          
-            // returns error message iff the keys are in NOT in sorted order!
-            // CAREFUL: we do not check the guides
-            int h = ht;
-            InternalNode u = root;
-            String s = checkTree(u, h, ""); // "" is the globally least key!
-            // if (s==null) // May NOT be error! let the caller decide.
-            // return "CHECKTREE ERROR";
-            return s;
+    void showTree (Node u, int h, String offset) {
+	    // internal recursive call for showTree
+	    if (h == 0) {
+	        debug("()");
+	        return;
+	    }
+	    int d = ((InternalNode) u).degree();
+	    String increment = "G=" + String.valueOf(u.guide) + ":(";
+	    // Note: "G=" refers to the "guide"
+	    dbug(increment);
+	    offset = offset + tab(increment.length() - 1, '-') + "|";
+	    for (int i = 0; i < d; i++)
+	        if (h == 1) {
+	            Node w = ((InternalNode) u).child[i];
+	            LeafNode v = (LeafNode) w;
+	            (v.item()).dump();
+	            if (i == d - 1)
+	                debug(")");
+	        } else {
+	            if (i > 0)
+	                dbug(offset);
+	            showTree(((InternalNode) u).child[i], h - 1, offset);
+	        }
+	    // dbug(")");
+	}// showTree
+
+    /*String tab (int n, char c){
+        // returns a string of length n filled with c
+        char[] chars = new char[n];
+        java.util.Arrays.fill(chars, c);
+        return String.valueOf(chars);
+    }//tab
+	*/
+    Tree23 randomTree (Random rg, int n, int N) {
+        // Insert n times into empty tree, and return the tree.
+        // Use rg as random number generator keys in range [0,N)
+        // Keep the size of tree in Util.COUNT
+        Tree23 t = new Tree23();
+        for (int i = 0; i < n; i++) {
+            int x = rg.nextInt(N);
+            Item it = new Item(x);
+            boolean b = t.insert(it);
+            if (b)  COUNT++;
+        } // for
+        return t;
+    }// randomTree
+
+    int randomDelete (Random rg, Tree23 tt, int N) {
+        // delete a random element in the tree 100 times until it's empty
+        // Use rg as random number generator keys in range [0,N)
+        // return the delete count if tree is empty
+        int count = 0;
+        Item it;
+        while (count < 100 && tt.ht > 0) {
+            it = tt.delete(String.valueOf(rg.nextInt(N)));
+            count++;
         }
-        String checkTree (Node u, int h, String maxkey) {
-            // internal recursive call for checkTree
-            // returns null if fail; else it is the maximum seen so far!
-            if (h == 0)
-                return "OK, EMPTY TREE";
-            int d = ((InternalNode) u).degree();
-            for (int i = 0; i < d; i++)
-                if (h == 1) {
-                    Node w = ((InternalNode) u).child[i];
-                    LeafNode v = (LeafNode) w;
-                    if (maxkey.compareTo(v.item().key) >= 0) { // error!
-                        debug("CHECKTREE ERROR at leaf " + v.item().key);
-                        debug(maxkey);
-                        return null;
-                    } else
-                        maxkey = v.item().key;
-                } else {
-                    String s1 = checkTree(((InternalNode) u).child[i], h - 1, maxkey);
-                    if (s1 == null || maxkey.compareTo(s1) >= 0) {
-                        return null;
-                    } else
-                        maxkey = s1;
-                }
-            return maxkey;
-        }// checkTree
+        return count;
+    }// randomDelete
+
+
+    void messUpTree (String key) {
+        InternalNode u = find(key);
+        int deg = u.degree();
+        u.swapNodes(0, deg - 1);
+    }// messUpTree
+
+
+    String checkTree () {          
+        // returns error message iff the keys are in NOT in sorted order!
+        // CAREFUL: we do not check the guides
+        int h = ht;
+        InternalNode u = root;
+        String s = checkTree(u, h, ""); // "" is the globally least key!
+        // if (s==null) // May NOT be error! let the caller decide.
+        // return "CHECKTREE ERROR";
+        return s;
+    }
+
+
+    String checkTree (Node u, int h, String maxkey) {
+        // internal recursive call for checkTree
+        // returns null if fail; else it is the maximum seen so far!
+        if (h == 0)
+            return "OK, EMPTY TREE";
+        int d = ((InternalNode) u).degree();
+        for (int i = 0; i < d; i++)
+            if (h == 1) {
+                Node w = ((InternalNode) u).child[i];
+                LeafNode v = (LeafNode) w;
+                if (maxkey.compareTo(v.item().key) >= 0) { // error!
+                    debug("CHECKTREE ERROR at leaf " + v.item().key);
+                    debug(maxkey);
+                    return null;
+                } else
+                    maxkey = v.item().key;
+            } else {
+                String s1 = checkTree(((InternalNode) u).child[i], h - 1, maxkey);
+                if (s1 == null || maxkey.compareTo(s1) >= 0) {
+                    return null;
+                } else
+                    maxkey = s1;
+            }
+        return maxkey;
+    }// checkTree
+
 
 	boolean multiInsert (Random rg, int n, int m){
 		// Insert n times and then search for m.
 		// returns true if m is found.
 		return false;}//multiInsert
+
+
 	// MAIN METHOD:=========================
 	/////////////////////////////////////////
 	
-        public static void main (String[] args) {
-            int ss = (args.length > 0) ? Integer.valueOf(args[0]) : 0;
-            int nn = (args.length > 1) ? Integer.valueOf(args[1]) : 10;
-            int mm = (args.length > 2) ? Integer.valueOf(args[2]) : 0;
-       
-            Random rg = (ss == 0) ? new Random() : new Random(ss);
-            Tree23 tt = new Tree23();
-       
-            switch (mm) {
-                case 0: // unit test for insert+search
-                    debug("==> mode 0: unit test\n");
-                    tt.unitTest();
-                    // tt.test();
-                    break;
-                case 1: // search for "10" once
-                    debug("==> mode 1: random insert+search once\n");
-                    tt.multiInsert(rg, nn, 10);
-                    break;
-                case 2: // search for "10" until succeeds
-                    debug("==> mode 2: random insert+search till success\n");
-                    while (!tt.multiInsert(rg, nn, 10))
-                        debug("\n================ Next Trial\n");
-                    break;
-                case 3: // you may add as many cases as you want
-                        // for your own testing.
-               
-                case 101: // create a random tree with nn random insertions
-                    debug("==> mode 101: create a random tree\n");
-                    tt = tt.randomTree(rg, nn, 2 * nn);
-                    debug("Randomly generated tree of is:");
+    public static void main (String[] args) {
+        int ss = (args.length > 0) ? Integer.valueOf(args[0]) : 0;
+        int nn = (args.length > 1) ? Integer.valueOf(args[1]) : 10;
+        int mm = (args.length > 2) ? Integer.valueOf(args[2]) : 0;
+   
+        Random rg = (ss == 0) ? new Random() : new Random(ss);
+        Tree23 tt = new Tree23();
+   
+        switch (mm) {
+            case 0: // unit test for insert+search
+                debug("==> mode 0: unit test\n");
+                tt.unitTest();
+                // tt.test();
+                break;
+            case 1: // search for "10" once
+                debug("==> mode 1: random insert+search once\n");
+                tt.multiInsert(rg, nn, 10);
+                break;
+            case 2: // search for "10" until succeeds
+                debug("==> mode 2: random insert+search till success\n");
+                while (!tt.multiInsert(rg, nn, 10))
+                    debug("\n================ Next Trial\n");
+                break;
+            case 3: // you may add as many cases as you want
+                    // for your own testing.
+           
+            case 101: // create a random tree with nn random insertions
+                debug("==> mode 101: create a random tree\n");
+                tt = tt.randomTree(rg, nn, 2 * nn);
+                debug("Randomly generated tree of is:");
+                tt.showTree();
+                break;
+            case 102: // create a random tree and randomly delete 100 times until it's empty
+                debug("==> mode 102: create a random tree and delete till tree is empty\n");
+                tt = tt.randomTree(rg, nn, 2 * nn);
+                debug("Randomly generated tree of is:");
+                tt.showTree();
+                int count = tt.randomDelete(rg, tt, 2 * nn);
+                if (tt.ht >= 1) {
+                    debug("Tree non-empty after 100 random deletes, here is what's left:");
                     tt.showTree();
-                    break;
-                case 102: // create a random tree and randomly delete 100 times until it's empty
-                    debug("==> mode 102: create a random tree and delete till tree is empty\n");
-                    tt = tt.randomTree(rg, nn, 2 * nn);
-                    debug("Randomly generated tree of is:");
-                    tt.showTree();
-                    int count = tt.randomDelete(rg, tt, 2 * nn);
-                    if (tt.ht >= 1) {
-                        debug("Tree non-empty after 100 random deletes, here is what's left:");
-                        tt.showTree();
-                    } else
-                        debug("After " + String.valueOf(count) + " deletes, tree is empty");
-                    break;
-            }
-        }// main
+                } else
+                    debug("After " + String.valueOf(count) + " deletes, tree is empty");
+                break;
+        }
+    }// main
 }//class Tree23
 
 
@@ -551,7 +603,7 @@ class InternalNode extends Node {
 
 
 	void newParent (Node u0, Node u1, InternalNode p){
-		//assert(u0.key < u1.key)
+		//assert(u0.key < u1.key);
 		p.guide = u1.guide;
 		p.child[0] = u0;
 		p.child[1] = u1; 
@@ -727,6 +779,7 @@ class InternalNode extends Node {
 
 
 	void dump (){// print this node
+
 		}//dump
 	void search(){
 
