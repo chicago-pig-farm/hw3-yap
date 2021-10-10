@@ -123,6 +123,14 @@ class Tree23 extends Util {
 		return null; // x is not found
 	}
 
+	void justGuides(InternalNode n){
+		if (n == null || n.parent == null) return;
+		if(n.greaterThan(n.parent.guide)){
+			n.parent.guide = n.guide;
+			justGuides(n.parent);
+		}
+	}
+
 	
 	void parentGuides(InternalNode p, InternalNode c){
 		//base case
@@ -140,24 +148,40 @@ class Tree23 extends Util {
 				nextRoot.child[1] = c;
 			}
 			root = nextRoot;
-		}
+			return; //exits
+		} 
 		else if(p.degree()<=2){
-			p.child[2] = c;
-			p.guide = c.guide;
+			if( c.greaterThan(p.child[1].guide)){ //c is the largest
+				p.child[2] = c;
+				p.guide = c.guide;
+				justGuides(p);
+			} else if( c.greaterThan(p.child[0].guide)){ //c is the middle
+				p.child[2] = p.child[1];
+				p.child[1] = c;
+			} else {
+				p.child[2] = p.child[1];
+				p.child[1] = p.child[0];
+				p.child[0] = c;
+			}
+			
 		}else{
+
 			//parent already has 3 children
+			//need to split internal node to make another parent
 			InternalNode p2 = new InternalNode();
 			if( c.greaterThan(p.child[2].guide)){ //c is the largest
 				p2.guide = c.guide;
 				p2.child[1] = c;
 				p2.child[0] = p.child[2];
 				p.child[2] = null;
+				p.guide = p.child[1].guide;
 				parentGuides(p.parent, p2);
 			} else if( c.greaterThan(p.child[1].guide)){ 
 				p2.child[0] = c;
 				p2.child[1] = p.child[2];
 				p2.guide = p2.child[0].guide;
 				p.child[2] = null; //remove childe from previous parent
+				p.guide = p.child[1].guide;
 				parentGuides(p.parent, p2);
 			} else if( c.greaterThan(p.child[0].guide)){ 
 				p2.child[0] = p.child[1]; // two largest going to belong to IN p2
@@ -177,6 +201,7 @@ class Tree23 extends Util {
 				p.guide = p.child[1].guide;
 				parentGuides(p.parent, p2);
 			}
+
 		}
 	}
 
@@ -189,6 +214,8 @@ class Tree23 extends Util {
 
 		if(u.degree() == 0){ //insert child for root 
 			u.child[0] = new LeafNode(it);
+			u.guide = u.child[0].guide;
+			ht++;
 			return true;
 		}
 
@@ -201,6 +228,7 @@ class Tree23 extends Util {
 			else{
 				u.child[1] = new LeafNode(it);
 			}
+			u.guide = u.child[1].guide;
 			return true;
 		}
 
@@ -208,6 +236,8 @@ class Tree23 extends Util {
 			//insert as child2
 			if(((LeafNode)u.child[1]).lessThan(it)){
 				u.child[2] = new LeafNode(it);
+				u.guide = u.child[2].guide;
+				justGuides(u);
 			//insert as child1, and move the "old child1" to child2
 			}else if(((LeafNode)u.child[0]).lessThan(it)){
 				u.child[2] = u.child[1];
@@ -219,6 +249,7 @@ class Tree23 extends Util {
 				u.child[1] = u.child[0];
 				u.child[0] = new LeafNode(it);
 			}
+			
 			return true;
 
 		//the node already has 3 children so now we have to split 
@@ -227,9 +258,7 @@ class Tree23 extends Util {
 			if (((LeafNode)u.child[2]).lessThan(it)){
 				u.child[3] = new LeafNode(it);
 				//split 
-
 				InternalNode nextP = new InternalNode();
-
 				nextP.updateGuide(u.child[2], u.child[3], nextP);
 				u.updateGuide(u.child[0], u.child[1], u);
 				parentGuides(u.parent, nextP);
@@ -311,6 +340,7 @@ class Tree23 extends Util {
 		for (String x: fruits){
 			boolean in = insert( new Item(x));
 			debug("insert(" + x + ") = " + String.valueOf(in));
+			showTree();
 		}
 		debug("Here is the final Fruit Tree:");
 		showTree();
@@ -391,6 +421,8 @@ class Tree23 extends Util {
 	        debug("()");
 	        return;
 	    }
+	    ////System.out.println("Height = "+h);
+	    if(u instanceof InternalNode ){
 	    int d = ((InternalNode) u).degree();
 	    String increment = "G=" + String.valueOf(u.guide) + ":(";
 	    // Note: "G=" refers to the "guide"
@@ -408,7 +440,11 @@ class Tree23 extends Util {
 	                dbug(offset);
 	            showTree(((InternalNode) u).child[i], h - 1, offset);
 	        }
-	    // dbug(")");
+	    }
+	     //dbug(")");
+	    else {
+	    	System.out.println("leaf: " + u.guide);
+	    }
 	}// showTree
 
     /*String tab (int n, char c){
@@ -645,7 +681,9 @@ class LeafNode extends Node {
 	Item item(){
 		Item it=new Item(guide, data);
 		return it; }
-
+	void dump(){
+		System.out.println("leaf   " + guide);
+	}
 	
 }//class LeafNode
 
@@ -877,7 +915,11 @@ class InternalNode extends Node {
     }// SortNode
 
 
-	void dump (){// print this node
+	void dump(){// print this node
+		System.out.println("Internal Node");
+		for(int i=0; i<degree(); i++){
+			System.out.println("children within IN " + child[i].guide);
+		}
 		}//dump
 	void search(){
 
