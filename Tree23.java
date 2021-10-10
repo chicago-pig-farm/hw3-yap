@@ -129,7 +129,7 @@ class Tree23 extends Util {
 		if(p == null ){ //adding new parent node at root level
 			ht++;
 			InternalNode nextRoot = new InternalNode();
-			if(root.guide.compareTo(c.guide) >0){
+			if(root.guide.compareTo(c.guide) >0){ //root guide is bigger than new parent guide
 
 				nextRoot.guide = root.guide;
 				nextRoot.child[0] =c;
@@ -147,11 +147,36 @@ class Tree23 extends Util {
 		}else{
 			//parent already has 3 children
 			InternalNode p2 = new InternalNode();
-			p2.guide = c.guide;
-			p2.child[1] = c;
-			p2.child[0] = p.child[2];
-			p.child[2] = null;
-			parentGuides(p.parent, p2);
+			if( c.greaterThan(p.child[2].guide)){ //c is the largest
+				p2.guide = c.guide;
+				p2.child[1] = c;
+				p2.child[0] = p.child[2];
+				p.child[2] = null;
+				parentGuides(p.parent, p2);
+			} else if( c.greaterThan(p.child[1].guide)){ 
+				p2.child[0] = c;
+				p2.child[1] = p.child[2];
+				p2.guide = p2.child[0].guide;
+				p.child[2] = null; //remove childe from previous parent
+				parentGuides(p.parent, p2);
+			} else if( c.greaterThan(p.child[0].guide)){ 
+				p2.child[0] = p.child[1]; // two largest going to belong to IN p2
+				p2.child[1] = p.child[2];
+				p2.guide = p2.child[0].guide;
+				p.child[2] = null; //remove child from previous parent
+				p.child[1] = c; //two smallest staying with IN p
+				p.guide = c.guide; //updating guides
+				parentGuides(p.parent, p2);
+			} else { // c is smallest of all the internal nodes of p
+				p2.child[0] = p.child[2];
+				p2.child[1] = p.child[1];
+				p2.guide = p2.child[1].guide;
+				p.child[2] = null;
+				p.child[1] = p.child[0];
+				p.child[0] = c;
+				p.guide = p.child[1].guide;
+				parentGuides(p.parent, p2);
+			}
 		}
 	}
 
@@ -181,10 +206,10 @@ class Tree23 extends Util {
 
 		else if (u.degree()==2){
 			//insert as child2
-			if(((LeafNode)u.child[1]).item().key.compareTo(it.key) < 0){
+			if(((LeafNode)u.child[1]).lessThan(it)){
 				u.child[2] = new LeafNode(it);
 			//insert as child1, and move the "old child1" to child2
-			}else if(((LeafNode)u.child[0]).item().key.compareTo(it.key) < 0){
+			}else if(((LeafNode)u.child[0]).lessThan(it)){
 				u.child[2] = u.child[1];
 				u.child[1] = new LeafNode(it);
 			//insert as child0
@@ -199,7 +224,7 @@ class Tree23 extends Util {
 		//the node already has 3 children so now we have to split 
 		} else {
 			//insert new node to the furthest right (child3)
-			if (((LeafNode)u.child[2]).item().key.compareTo(it.key) < 0){
+			if (((LeafNode)u.child[2]).lessThan(it)){
 				u.child[3] = new LeafNode(it);
 				//split 
 
@@ -210,7 +235,7 @@ class Tree23 extends Util {
 				parentGuides(u.parent, nextP);
 			//insert new node at the "third" child
 			//move child2 to child3
-			}else if(((LeafNode)u.child[1]).item().key.compareTo(it.key) < 0){
+			}else if(((LeafNode)u.child[1]).lessThan(it)){
 				u.child[3] = u.child[2];
 				u.child[2] = new LeafNode(it);
 				//split
@@ -221,7 +246,7 @@ class Tree23 extends Util {
 				parentGuides(u.parent, nextP);
 			//insert new node at "second child"
 			//move child2 and child3
-			}else if(((LeafNode)u.child[0]).item().key.compareTo(it.key) < 0){
+			}else if(((LeafNode)u.child[0]).lessThan(it)){
 				u.child[3] = u.child[2];
 				u.child[2] = u.child[1];
 				u.child[1] = new LeafNode(it);
@@ -288,7 +313,7 @@ class Tree23 extends Util {
 			debug("insert(" + x + ") = " + String.valueOf(in));
 		}
 		debug("Here is the final Fruit Tree:");
-		//showTree();
+		showTree();
 
 		debug("\n======> Inserting sqrt(3) digits:");
 		// Second input: /////////////////////////////////////
@@ -568,6 +593,43 @@ class Item {
 class Node extends Util {
 		InternalNode parent;
 		String guide;
+
+		//This leaf node is greater than the item's value
+	boolean greaterThan(Item it){
+
+		if( guide.compareTo(it.key) > 0 ){
+			return true;
+		}
+		else return false;
+	}
+
+		//This leaf node is greater than the item's value
+	boolean greaterThan(String s){
+
+		if( guide.compareTo(s) > 0 ){
+			return true;
+		}
+		else return false;
+	}
+
+	//This leaf node is less than the item's value
+	boolean lessThan(Item it){
+
+		if( guide.compareTo(it.key) < 0 ){
+			return true;
+		}
+		else return false;
+	}
+
+	//This leaf node is less than the item's value
+	boolean lessThan(String s){
+
+		if( guide.compareTo(s) < 0 ){
+			return true;
+		}
+		else return false;
+	}
+
 	}//class Node
 	
 // Class LeafNode %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -584,23 +646,7 @@ class LeafNode extends Node {
 		Item it=new Item(guide, data);
 		return it; }
 
-	//This leaf node is greater than the item's value
-	boolean greaterThan(Item it){
-
-		if( guide.compareTo(it.key) > 0 ){
-			return true;
-		}
-		else return false;
-	}
-
-	//This leaf node is less than the item's value
-	boolean lessThan(Item it){
-
-		if( guide.compareTo(it.key) < 0 ){
-			return true;
-		}
-		else return false;
-	}
+	
 }//class LeafNode
 
 // Class InternalNode %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
